@@ -1,7 +1,7 @@
 from typing import Optional
 from typing import List
 from collections import deque
-
+from functools import lru_cache
 
 class ListNode:
     def __init__(self, val=0, next=None):
