@@ -2,22 +2,15 @@ from utils import *
 
 class Solution:
     def longestCommonSubsequence(self, a: str, b: str) -> int:
+        dp = [0] * (len(b) + 1)
+        for i in range(len(a)):
+            prev = 0
+            for j in range(len(b)):
+                adig = prev
+                prev = dp[j + 1]
+                dp[j + 1] = adig + 1 if a[i] == b[j] else max(dp[j], dp[j + 1])
+        return dp[-1]
 
-        @lru_cache(None)
-        def fn(p1, p2):
-            if p1 == len(a) or p2 == len(b):
-                return 0
-
-            opt1 = fn(p1 + 1, p2)
-
-            first_occurence = b.find(a[p1], p2)
-            opt2 = 0
-            if first_occurence != -1:
-                opt2 = 1 + fn(p1 + 1, first_occurence + 1)
-
-            return max(opt1, opt2)
-
-        return fn(0, 0)
 
 a = "abcde"
 b = "ace"
