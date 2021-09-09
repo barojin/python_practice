@@ -221,4 +221,21 @@ class Solution:
 
         return res
 
+    def treeToDoublyList(self, root):
+        if not root:
+            return
+        dummy = Node(0, None, None)
+        prev = dummy
+        st, node = [], root
+        while st or node:
+            while node:
+                st.append(node)
+                node = node.left
+            node = st.pop()
+            node.left, prev.right, prev = prev, node, node
+
+            node = node.right
+        dummy.right.left, prev.right = prev, dummy.right
+        return dummy.right
+    
 print(Solution().generateTrees(3))

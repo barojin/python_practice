@@ -1590,6 +1590,19 @@ class Solution:
                     i += 1
         return cnt
 
-s = 'bcabc'
-x = Solution().smallestSubsequence(s)
+    def largestRectangleArea(self, heights: List[int]) -> int:
+        H = heights
+        H.append(0)
+        stack = [-1]
+        ans = 0
+        for i in range(len(H)):
+            while H[i] < H[stack[-1]]:
+                h = H[stack.pop()]
+                w = i - stack[-1] - 1
+                ans = max(ans, h * w)
+            stack.append(i)
+        H.pop()
+        return ans
+
+x = Solution().largestRectangleArea([6, 7, 5, 2, 4, 5, 9, 3])
 print(x)
