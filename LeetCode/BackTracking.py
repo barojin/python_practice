@@ -68,47 +68,68 @@ class Solution:
         btk((0, 0), 0)
 
     def solveSudoku(self, board: List[List[str]]) -> None:
-        """
-        Do not return anything, modify board in-place instead.
-        """
-        N = 9
-        row = [[True] * len(board[0]) for _ in range(len(board))]
-        col = [[True] * len(board[0]) for _ in range(len(board))]
-        box = [[True] * len(board[0]) for _ in range(len(board))]
-        subN = 9 // 3
-        get_idx = lambda x, y: x // subN * subN + y // subN
-        for i in range(len(board)):
-            for j in range(len(board[0])):
-                if board[i][j] == '.':
-                    continue
-                k = get_idx(i, j)
-                n = int(board[i][j]) - 1
-                row[i][n] = False
-                col[j][n] = False
-                box[k][n] = False
 
-        def btk(r, c):
-            if c == len(board[0]):
-                r += 1
-                c = 0
-            if r == len(board):
-                return True
+        def returnMinItem(possible_values):
+            return min(possible_values.items(), key=lambda x: len(x[1]))[0]
+            i, j = next(iter(possible_values))
+            min_value_len = len(possible_values[i, j])
+            for k, v in possible_values.items():
+                if len(v) == 1:
+                    return k
+                if len(v) < min_value_len:
+                    (i, j), min_value_len = k, len(v)
+            return i, j
 
-            if board[r][c] != '.':
-                return btk(r, c + 1)
+        def placeNextDigit(board, possible_values):
+            i, j = returnMinItem(possible_values)
+            numbers = possible_values.pop((i, j))
 
-            k = get_idx(r, c)
-            for n in range(N):
-                if row[r][n] and col[c][n] and box[k][n]:
-                    board[r][c] = str(n + 1)
-                    row[r][n] = col[c][n] = box[k][n] = False
-                    if btk(r, c + 1):
-                        return True
-                    board[r][c] = '.'
-                    row[r][n] = col[c][n] = box[k][n] = True
-            return False
+            for n in numbers:
+                board[i][j] = n
+                if not possible_values:
+                    return
 
-        btk(0, 0)
+                discarded = []
+
+                for (i2, j2), v in possible_values.items():
+                    if (i == i2 or j == j2 or (i // 3, j // 3) == (i2 // 3, j2 // 3)) and n in v:
+                        if len(v) == 1:
+                            for v in discarded:
+                                v.add(n)
+                            possible_values[i, j] = numbers
+                            return
+                        v.discard(n)
+                        discarded.append(v)
+
+                placeNextDigit(board, possible_values)
+
+                if not possible_values:
+                    return
+
+                for v in discarded:
+                    v.add(n)
+
+            possible_values[i, j] = numbers
+
+        possible_values = {(i, j): {"1", "2", "3", "4", "5", "6", "7", "8", "9"} \
+                                   - {board[i][k] for k in range(9)} \
+                                   - {board[k][j] for k in range(9)} \
+                                   - {board[3 * (i // 3) + di][3 * (j // 3) + dj]
+                                      for di in range(3) for dj in range(3)}
+                           for i in range(9) for j in range(9)
+                           if board[i][j] == '.'}
+
+        i, j = returnMinItem(possible_values)
+        while possible_values and len(possible_values[i, j]) == 1:
+            for n in possible_values.pop((i, j)):
+                board[i][j] = n
+                for (i2, j2), v in possible_values.items():
+                    if (i == i2 or j == j2 or (i // 3, j // 3) == (i2 // 3, j2 // 3)) and n in v:
+                        v.discard(n)
+            if possible_values:
+                i, j = returnMinItem(possible_values)
+        if possible_values:
+            placeNextDigit(board, possible_values)
 
     def generateParenthesis(self, n: int) -> List[str]:
         def fn(a=[]):
