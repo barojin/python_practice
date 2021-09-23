@@ -14,6 +14,11 @@ def count_one(x):
     return cnt
 
 
+def check(x, num):
+    return x & (1 << num) > 0
+
+print(check(20, 4))
+
 assert count_one(sys.maxsize) == '{0:b}'.format(sys.maxsize).count('1')
 assert count_one(0) == 0
 assert count_one(3) == 2

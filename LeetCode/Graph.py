@@ -82,40 +82,54 @@ class Solution:
         #
         # return fn()
 
-    def calcEquation(self, equations: List[List[str]], values: List[float], queries: List[List[str]]) -> List[float]:
-        d = {}
-        res = []
+    def calcEquation(self, equations: List[List[str]], values: List[float], queries: List[List[str]]) -> List[
+        float]:
 
-        def find(i):
-            if i not in d:
-                d[i] = (i, 1)
-            group_i, w = d[i]
+        gid_weight = {}
 
-            if group_i != i:
-                new_group_id, group_w = find(group_i)
-                d[i] = (new_group_id, w * group_w)
-            return d[i]
+        def find(node_id):
+            if node_id not in gid_weight:
+                gid_weight[node_id] = (node_id, 1)
+            group_id, node_weight = gid_weight[node_id]
+            # The above statements are equivalent to the following one
+            # group_id, node_weight = gid_weight.setdefault(node_id, (node_id, 1))
+
+            if group_id != node_id:
+                # found inconsistency, trigger chain update
+                new_group_id, group_weight = find(group_id)
+                gid_weight[node_id] = \
+                    (new_group_id, node_weight * group_weight)
+            return gid_weight[node_id]
 
         def union(dividend, divisor, value):
-            x, x_w = find(dividend)
-            y, y_w = find(divisor)
-            if x != y:
-                d[x] = (y, y_w * value / x_w)
+            dividend_gid, dividend_weight = find(dividend)
+            divisor_gid, divisor_weight = find(divisor)
+            if dividend_gid != divisor_gid:
+                # merge the two groups together,
+                # by attaching the dividend group to the one of divisor
+                gid_weight[dividend_gid] = \
+                    (divisor_gid, divisor_weight * value / dividend_weight)
 
+        # Step 1). build the union groups
         for (dividend, divisor), value in zip(equations, values):
             union(dividend, divisor, value)
-
+        print(gid_weight)
+        results = []
+        # Step 2). run the evaluation, with "lazy" updates in find() function
         for (dividend, divisor) in queries:
-            if dividend not in d or divisor not in d:
-                res.append(-1.0)
+            if dividend not in gid_weight or divisor not in gid_weight:
+                # case 1). at least one variable did not appear before
+                results.append(-1.0)
             else:
-                x, x_w = find(dividend)
-                y, y_w = find(divisor)
-                if x != y:
-                    res.append(-1.0)
+                dividend_gid, dividend_weight = find(dividend)
+                divisor_gid, divisor_weight = find(divisor)
+                if dividend_gid != divisor_gid:
+                    # case 2). the variables do not belong to the same chain/group
+                    results.append(-1.0)
                 else:
-                    res.append(x_w / y_w)
-        return res
+                    # case 3). there is a chain/path between the variables
+                    results.append(dividend_weight / divisor_weight)
+        return results
 
     def calcEquation2(self, equations, values, queries):
         # Floyd-Warshall
@@ -131,6 +145,79 @@ class Solution:
                 quot[i][j] = quot[i][k] * quot[k][j]
         return [quot[num].get(den, -1.0) for num, den in queries]
 
+    def minCostToSupplyWater(self, n: int, wells: List[int], pipes: List[List[int]]) -> int:
+        # prim algorithm, minimum spanning tree
+        edges = defaultdict(list) # {vertice: [[cost, index]]}
+        min_heap = [] # [[cost, index]]
+        for i, v in enumerate(wells):
+            heapq.heappush(min_heap, [v, i+1])
+        for a, b, c in pipes:
+            edges[a].append([c, b])
+            edges[b].append([c, a])
+        seen = set()
+        res = 0
+        while len(seen) < n:
+            cost, vertex = heapq.heappop(min_heap)
+            if vertex not in seen:
+                seen.add(vertex)
+                res += cost
+            for adj_c, adj_v in edges[vertex]:
+                if adj_v in seen:
+                    continue
+                heapq.heappush(min_heap, [adj_c, adj_v])
+        return res
 
-x = [3,5,7]
-print(bisect.bisect_left(x, 1))
+    def minCostToSupplyWater2(self, n: int, wells: List[int], pipes: List[List[int]]) -> int:
+        # unionfind, krukashal
+        uf = {i: i for i in range(n + 1)}
+
+        def find(x):
+            if x != uf[x]:
+                uf[x] = find(uf[x])
+            return uf[x]
+
+        w = [[c, 0, i] for i, c in enumerate(wells, 1)]
+        p = [[c, i, j] for i , j, c in pipes]
+        res = 0
+        for c, x, y in sorted(w + p):
+            x, y = find(x), find(y)
+            if x != y:
+                uf[find(x)] = find(y)
+                res += c
+                n -= 1
+            if n == 0:
+                return res
+
+    def findItinerary(self, tickets: List[List[str]]) -> List[str]:
+        def backtracking(origin, route):
+            if len(route) == len(tickets) + 1:
+                nonlocal itinerary
+                itinerary = route
+                return True
+
+            for i, nextDest in enumerate(edges[origin]):
+                if not seen[origin][i]:
+                    seen[origin][i] = True
+                    ret = backtracking(nextDest, route + [nextDest])
+                    seen[origin][i] = False
+                    if ret:
+                        return True
+            return False
+
+        from collections import defaultdict
+        edges = defaultdict(list)
+        for a, b in tickets:
+            bisect.insort(edges[a], b)
+            # heapq.heappush(edges[a], b)
+            # edges[a].append(b)
+
+        seen = {}
+
+        for depature, arrival_list in edges.items():
+            # arrival_list.sort()
+            seen[depature] = [False] * len(arrival_list)
+
+        itinerary = []
+        route = ['JFK']
+        backtracking('JFK', route)
+        return itinerary
