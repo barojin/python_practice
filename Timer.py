@@ -11,7 +11,7 @@ start = time.time()
 c = a[:]
 second = time.time() - start
 print("2. ", second)
-#asd
+#asd asdfsaf
 if first > second:
     print("Second is faster")
 else:
