@@ -27,6 +27,7 @@ def is_cycle_directed(n: int, edges: dict) -> bool:
 def get_all_cyclic_paths_directed(n: int, edges: dict) -> list:
     cycle_paths = []
     color = [0] * n
+
     # 0: unvisited, 1: exploring, 2: visited
 
     def get_cycle_path(start, cur, path):
@@ -68,6 +69,7 @@ def find_cycle_directed(n, edges):
     :param edges: { vertex: [adjacent vertices of given key]}
     :return:
     """
+
     def _dfs(v):
         color[v] = 1
         for u in edges[v]:
@@ -112,6 +114,7 @@ def find_cycle_undirected(n, edges):
     :param edges:
     :return:
     """
+
     def is_cyclic_dfs(v, parent_v):
         visited[v] = True
         for u in edges.get(v, []):
@@ -144,6 +147,24 @@ def find_cycle_undirected(n, edges):
             cycle.append(v)
             v = parent[v]
         return cycle[::-1]
+
+
+def hasDeadlock(g) -> bool:
+    """
+    :param g: graph, [[1,2,3], [3], ...], index = vertex, list of index = vertex's adjacent nodes
+    :return:
+    """
+
+    def is_cycle(u):
+        color[u] = 1
+        for v in g[u]:
+            if color[v] == 1 or is_cycle(v):
+                return True
+        color[u] = 2
+        return False
+
+    color = [0] * len(g)
+    return any(is_cycle(u) for u in range(len(g)) if color[u] == 0)
 
 
 class TestCycles(unittest.TestCase):
@@ -181,7 +202,7 @@ class TestCycles(unittest.TestCase):
         n = 8
         # print("4", get_all_cyclic_paths_undirected(n, edges))
         assert find_cycle_directed(n, edges) == [2, 3, 1]
-        
+
     def test_get_all_cyclic_paths_directed(self):
         # correct cases,
         # 1. cyclic cases

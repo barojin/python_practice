@@ -221,3 +221,109 @@ class Solution:
         route = ['JFK']
         backtracking('JFK', route)
         return itinerary
+
+    def criticalConnections(self, n: int, connections: List[List[int]]) -> List[List[int]]:
+        # undirected
+        # what is the condition for the critical connection?
+        # 1. An edge is a critical connection, iff it is not in a cycle.
+
+        # we should know that how to catch all cycles in the graph
+        # rank of node
+
+        # This algorithm works that all edges in cycle of subgraph are deleted
+        # so only critical connections are left in conn_set (hash set)
+        # How to find the edges in cycle?
+        # Rank all visited nodes in ascending order e.g. first to last.
+        # Do traverse nodes,
+        # If the current node meets the next node who has a lower rank
+        # that means it's cycle. Let this next node call a start node.
+        # so we can remove edges among ancestor nodes those who have a higher rank than a start node by backtracking.
+        # Period.
+        def dfs(node: int, discovery_rank: int) -> int:
+            # if node is visited, return its rank, this trigger the removing backtracking
+            if rank[node]:
+                return rank[node]
+            # update the rank of node
+            rank[node] = discovery_rank
+            # set min_rank with float('inf') but discovery_rank + 1 is at most here
+            min_rank = discovery_rank + 1
+            for adj in graph[node]:
+                # skip the parent node
+                if rank[adj] and rank[adj] == discovery_rank - 1:
+                    continue
+                # Recurse on adjacent nodes
+                recursive_rank = dfs(adj, discovery_rank + 1)
+                if recursive_rank <= discovery_rank:
+                    conn_set.remove(tuple(sorted([node, adj])))
+                min_rank = min(min_rank, recursive_rank)
+            return min_rank
+
+        rank = dict.fromkeys(range(n))
+        graph = defaultdict(list)
+        conn_set = set()
+
+        for u, v in connections:
+            graph[u].append(v)
+            graph[v].append(u)
+            conn_set.add(tuple(sorted([u, v])))
+
+        dfs(0, 0)
+        return list(conn_set)
+
+    def criticalConnections2(self, n: int, connections: List[List[int]]) -> List[List[int]]:
+        # tarzan algorithm
+        edges = [[] for i in range(n)]
+        times = [float('inf')] * n
+        critical = []
+        for a, b in connections:
+            edges[a].append(b)
+            edges[b].append(a)
+
+        def dfs(current_node, discovery_time, parent_node):
+            c, t, p = current_node, discovery_time, parent_node
+            if times[c] < n:
+                return times[c]
+            times[c] = t
+            for adj in edges[c]:
+                if adj == p:
+                    continue
+                adj_min_time = dfs(adj, t + 1, c)
+                if adj_min_time > t:
+                    critical.append((c, adj))
+
+                times[c] = min(times[c], adj_min_time)
+            return times[c]
+
+        dfs(n-1, 0, -1)
+        return critical
+
+#         edges = [[] for i in range(n)]
+#         times = [None] * n
+#         critical_connections = []
+
+#         for a, b in connections:
+#             edges[a].append(b)
+#             edges[b].append(a)
+
+#         def dfs(current_node, discovery_time):
+#             if times[current_node]:
+#                 return times[current_node]
+
+#             c, d = current_node, discovery_time
+#             times[c] = discovery_time
+
+#             # go to adjacent nodes and get minimum discovery time
+#             for adj in edges[c]:
+#                 # times[adj]: means adj was visited so no traverse
+#                 # times[adj] == d - 1: directed graph, so prevent access back to previous node
+#                 if times[adj] and times[adj] == d - 1:
+#                     continue
+
+#                 adj_min_time = dfs(adj, d + 1)
+#                 if adj_min_time > times[c]:
+#                     critical_connections.append([c, adj])
+#                 times[c] = min(times[c], adj_min_time)
+#             return times[c]
+
+#         dfs(0, 0)
+#         return critical_connections
